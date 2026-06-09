@@ -1,0 +1,23 @@
+{
+  "name": "포토 저널 · Photo Journal",
+  "short_name": "포토저널",
+  "description": "사진으로 하루를 저장하고, 달력으로 다시 보는 개인 기억 아카이브",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAF7",
+  "theme_color": "#FAFAF7",
+  "categories": ["lifestyle", "photo", "productivity"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "오늘 기록", "short_name": "오늘 기록", "url": "./index.html#/entry/today", "description": "오늘 하루를 바로 기록" },
+    { "name": "검색", "short_name": "검색", "url": "./index.html#/search" }
+  ]
+}
