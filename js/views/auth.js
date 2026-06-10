@@ -1,6 +1,6 @@
 // Login / sign-up screen (shown when cloud is enabled and no session)
-import { el } from '../util.js?v=2';
-import { signIn, signUp } from '../cloud.js?v=2';
+import { el } from '../util.js?v=3';
+import { signIn, signUp } from '../cloud.js?v=3';
 
 export function renderAuth(root) {
   root.innerHTML = '';

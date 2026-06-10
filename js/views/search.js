@@ -1,7 +1,7 @@
 // Search entries by text, tag, emotion
-import { el, fmtLong, emotionOf } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { getAsset } from '../store.js?v=2';
+import { el, fmtLong, emotionOf } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { getAsset } from '../store.js?v=3';
 
 export function renderSearch(root, nav) {
   root.innerHTML = '';

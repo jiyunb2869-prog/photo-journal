@@ -1,9 +1,9 @@
 // Day entry editor — "하루 카드 편집기" (photo first, then sentences)
-import { el, fmtLong, EMOTIONS, toast } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { getAsset } from '../store.js?v=2';
-import { fileToImageAsset, fileToVideoAsset } from '../imaging.js?v=2';
-import { openVideo } from './videoplayer.js?v=2';
+import { el, fmtLong, EMOTIONS, toast } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { getAsset } from '../store.js?v=3';
+import { fileToImageAsset, fileToVideoAsset } from '../imaging.js?v=3';
+import { openVideo } from './videoplayer.js?v=3';
 
 const MAX_PHOTOS = 4;
 

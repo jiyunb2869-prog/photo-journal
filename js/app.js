@@ -1,19 +1,19 @@
 // Router + app bootstrap
-import { $, el, today } from './util.js?v=2';
-import * as store from './store.js?v=2';
-import { makeGradientDataUrl } from './imaging.js?v=2';
-import { renderCalendar } from './views/calendar.js?v=2';
-import { renderEditor } from './views/editor.js?v=2';
-import { renderDayCard } from './views/daycard.js?v=2';
-import { renderRecap } from './views/recap.js?v=2';
-import { renderYear } from './views/year.js?v=2';
-import { renderSearch } from './views/search.js?v=2';
-import { renderSettings } from './views/settings.js?v=2';
-import { startReminderLoop } from './reminders.js?v=2';
-import { registerSW, canInstall, isStandalone, isIOS, onInstallStateChange, promptInstall } from './pwa.js?v=2';
-import { CLOUD_ENABLED } from './config.js?v=2';
-import * as cloud from './cloud.js?v=2';
-import { renderAuth } from './views/auth.js?v=2';
+import { $, el, today } from './util.js?v=3';
+import * as store from './store.js?v=3';
+import { makeGradientDataUrl } from './imaging.js?v=3';
+import { renderCalendar } from './views/calendar.js?v=3';
+import { renderEditor } from './views/editor.js?v=3';
+import { renderDayCard } from './views/daycard.js?v=3';
+import { renderRecap } from './views/recap.js?v=3';
+import { renderYear } from './views/year.js?v=3';
+import { renderSearch } from './views/search.js?v=3';
+import { renderSettings } from './views/settings.js?v=3';
+import { startReminderLoop } from './reminders.js?v=3';
+import { registerSW, canInstall, isStandalone, isIOS, onInstallStateChange, promptInstall } from './pwa.js?v=3';
+import { CLOUD_ENABLED } from './config.js?v=3';
+import * as cloud from './cloud.js?v=3';
+import { renderAuth } from './views/auth.js?v=3';
 
 const app = $('#app');
 

@@ -1,5 +1,5 @@
 // Fullscreen-ish video playback overlay (inside the phone frame)
-import { el } from '../util.js?v=2';
+import { el } from '../util.js?v=3';
 
 export function openVideo(url) {
   const phone = document.querySelector('.phone') || document.body;

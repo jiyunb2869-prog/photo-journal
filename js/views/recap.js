@@ -1,7 +1,7 @@
 // Monthly recap — auto-playing slides of the month's representative photos
-import { el, parseYmd, WEEK_KO, MONTH_KO } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { getAsset } from '../store.js?v=2';
+import { el, parseYmd, WEEK_KO, MONTH_KO } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { getAsset } from '../store.js?v=3';
 
 export function renderRecap(root, nav, key /* "YYYY-MM" (month) or "YYYY" (year) */) {
   const isYear = !key.includes('-');

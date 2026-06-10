@@ -1,8 +1,8 @@
 // Year overview — 12 mini calendars, the highest-level view
-import { el, ymd, today, parseYmd, emotionOf } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { getAsset } from '../store.js?v=2';
-import { renderYearPoster } from '../imaging.js?v=2';
+import { el, ymd, today, parseYmd, emotionOf } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { getAsset } from '../store.js?v=3';
+import { renderYearPoster } from '../imaging.js?v=3';
 
 const MONTHS_KO = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 let curYear = 0;
@@ -81,7 +81,7 @@ function miniMonth(year, month, todayStr, nav) {
 }
 
 async function savePoster(year) {
-  const { toast } = await import('../util.js?v=2');
+  const { toast } = await import('../util.js?v=3');
   toast('연간 포스터 생성 중…');
   const canvas = document.createElement('canvas');
   await renderYearPoster(canvas, year, store.getEntry, getAsset);

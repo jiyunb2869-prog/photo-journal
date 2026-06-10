@@ -1,8 +1,8 @@
 // Day card output — 3 templates, export PNG
-import { el, fmtLong, toast } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { getAsset } from '../store.js?v=2';
-import { renderCard } from '../imaging.js?v=2';
+import { el, fmtLong, toast } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { getAsset } from '../store.js?v=3';
+import { renderCard } from '../imaging.js?v=3';
 
 const TEMPLATES = [
   { key: 'poster', label: '포스터' },

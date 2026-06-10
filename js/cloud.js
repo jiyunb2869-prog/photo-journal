@@ -1,6 +1,6 @@
 // Cloud sync layer — auth, entries (Postgres), media (Storage). All scoped to
 // the logged-in user by Row Level Security.
-import { sb } from './supabase.js?v=2';
+import { sb } from './supabase.js?v=3';
 
 // ---- auth ----
 export async function getSession() { const { data } = await sb.auth.getSession(); return data.session || null; }
@@ -26,8 +26,9 @@ const fromRow = (r) => ({
   cardTemplate: r.card_template || 'poster', createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
+const ENTRY_COLS = 'user_id,date,one_line,reflection,emotion,tags,memo,rep_asset_id,asset_ids,card_template,created_at,updated_at';
 export async function pullEntries() {
-  const { data, error } = await sb.from('entries').select('*');
+  const { data, error } = await sb.from('entries').select(ENTRY_COLS);
   if (error) throw error;
   return (data || []).map(fromRow);
 }
@@ -44,8 +45,9 @@ export async function removeEntry(date) {
 const BUCKET = 'media';
 const extFor = (type, blob) => type === 'video' ? (blob.type.includes('mp4') ? 'mp4' : (blob.type.includes('quicktime') ? 'mov' : 'webm')) : 'jpg';
 
+const ASSET_COLS = 'id,user_id,date,type,w,h,duration,storage_path,thumb_path,created_at';
 export async function pullAssets() {
-  const { data, error } = await sb.from('assets').select('*');
+  const { data, error } = await sb.from('assets').select(ASSET_COLS);
   if (error) throw error;
   return data || [];
 }

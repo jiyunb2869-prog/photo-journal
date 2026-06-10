@@ -1,8 +1,8 @@
 // Month calendar home — the app's face
-import { el, ymd, today, parseYmd, MONTH_KO, emotionOf, toast } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { getAsset } from '../store.js?v=2';
-import { renderMonthPoster } from '../imaging.js?v=2';
+import { el, ymd, today, parseYmd, MONTH_KO, emotionOf, toast } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { getAsset } from '../store.js?v=3';
+import { renderMonthPoster } from '../imaging.js?v=3';
 
 let view = { y: 0, m: 0 }; // current shown month
 

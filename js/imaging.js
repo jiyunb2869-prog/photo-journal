@@ -1,5 +1,5 @@
 // Image import (downscale) + day-card canvas rendering
-import { fmtLong, emotionOf, parseYmd, WEEK_KO, ymd } from './util.js?v=2';
+import { fmtLong, emotionOf, parseYmd, WEEK_KO, ymd } from './util.js?v=3';
 
 const MAX = 1280;   // longest edge for stored full photo
 const THUMB = 480;  // longest edge for grid thumbnails

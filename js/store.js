@@ -1,9 +1,9 @@
 // Data layer — entries/settings in localStorage (small JSON), binary media
 // (photos/videos) in IndexedDB via assets.js (object URLs cached in memory).
-import { uid, today, parseYmd, ymd } from './util.js?v=2';
-import { initAssets, getAssetMem, putAsset, delAsset, getBlob, exportAssets, importAssets, clearAssets, dataUrlToBlob } from './assets.js?v=2';
-import { CLOUD_ENABLED } from './config.js?v=2';
-import * as cloud from './cloud.js?v=2';
+import { uid, today, parseYmd, ymd } from './util.js?v=3';
+import { initAssets, getAssetMem, putAsset, delAsset, getBlob, exportAssets, importAssets, clearAssets, dataUrlToBlob } from './assets.js?v=3';
+import { CLOUD_ENABLED } from './config.js?v=3';
+import * as cloud from './cloud.js?v=3';
 
 const KEY = 'pj.v1';
 

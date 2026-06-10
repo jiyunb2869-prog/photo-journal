@@ -1,10 +1,10 @@
 // Settings — account, lock, reminders, data export/import
-import { el, toast } from '../util.js?v=2';
-import * as store from '../store.js?v=2';
-import { requestPermission, permissionState } from '../reminders.js?v=2';
-import { canInstall, isStandalone, isIOS, promptInstall } from '../pwa.js?v=2';
-import { CLOUD_ENABLED } from '../config.js?v=2';
-import { signOut } from '../cloud.js?v=2';
+import { el, toast } from '../util.js?v=3';
+import * as store from '../store.js?v=3';
+import { requestPermission, permissionState } from '../reminders.js?v=3';
+import { canInstall, isStandalone, isIOS, promptInstall } from '../pwa.js?v=3';
+import { CLOUD_ENABLED } from '../config.js?v=3';
+import { signOut } from '../cloud.js?v=3';
 
 export function renderSettings(root, nav) {
   root.innerHTML = '';

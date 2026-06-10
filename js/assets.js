@@ -3,7 +3,7 @@
 //
 // localStorage held base64 in one JSON blob (~5MB cap) → large photos/videos
 // silently failed to persist. IndexedDB stores Blobs with a much larger quota.
-import { uid } from './util.js?v=2';
+import { uid } from './util.js?v=3';
 
 const DB = 'pj-assets', STORE = 'assets', VER = 1;
 let _db = null;
