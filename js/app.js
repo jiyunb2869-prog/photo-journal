@@ -1,21 +1,18 @@
 // Router + app bootstrap
-import { $, el, today } from './util.js?v=1';
-import * as store from './store.js?v=1';
-import { makeGradientDataUrl } from './imaging.js?v=1';
-import { renderCalendar } from './views/calendar.js?v=1';
-import { renderEditor } from './views/editor.js?v=1';
-import { renderDayCard } from './views/daycard.js?v=1';
-import { renderRecap } from './views/recap.js?v=1';
-import { renderYear } from './views/year.js?v=1';
-import { renderSearch } from './views/search.js?v=1';
-import { renderSettings } from './views/settings.js?v=1';
-import { startReminderLoop } from './reminders.js?v=1';
-import { registerSW, canInstall, isStandalone, isIOS, onInstallStateChange, promptInstall } from './pwa.js?v=1';
+import { $, el, today } from './util.js?v=2';
+import * as store from './store.js?v=2';
+import { makeGradientDataUrl } from './imaging.js?v=2';
+import { renderCalendar } from './views/calendar.js?v=2';
+import { renderEditor } from './views/editor.js?v=2';
+import { renderDayCard } from './views/daycard.js?v=2';
+import { renderRecap } from './views/recap.js?v=2';
+import { renderYear } from './views/year.js?v=2';
+import { renderSearch } from './views/search.js?v=2';
+import { renderSettings } from './views/settings.js?v=2';
+import { startReminderLoop } from './reminders.js?v=2';
+import { registerSW, canInstall, isStandalone, isIOS, onInstallStateChange, promptInstall } from './pwa.js?v=2';
 
 const app = $('#app');
-
-// seed demo content on first run so the calendar isn't empty
-store.seedIfEmpty(makeGradientDataUrl);
 
 const nav = (hash) => {
   if (location.hash === hash) route();      // re-render same route
@@ -68,11 +65,19 @@ function renderLockToggle(root, nav) {
 }
 
 window.addEventListener('hashchange', route);
-window.addEventListener('DOMContentLoaded', route);
-route();
-startReminderLoop();
-registerSW();
-setupInstallBanner();
+
+async function boot() {
+  app.innerHTML = '<div class="empty-state">불러오는 중…</div>';
+  try {
+    await store.init();                          // open IndexedDB + migrate legacy media
+    await store.seedIfEmpty(makeGradientDataUrl); // demo content on first run
+  } catch (e) { console.error('boot init failed', e); }
+  route();
+  startReminderLoop();
+  registerSW();
+  setupInstallBanner();
+}
+boot();
 
 // ---- PWA install banner (dismissible) ----
 function setupInstallBanner() {

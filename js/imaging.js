@@ -1,24 +1,66 @@
 // Image import (downscale) + day-card canvas rendering
-import { fmtLong, emotionOf, parseYmd, WEEK_KO, ymd } from './util.js?v=1';
+import { fmtLong, emotionOf, parseYmd, WEEK_KO, ymd } from './util.js?v=2';
 
-const MAX = 1280; // longest edge for stored photos
+const MAX = 1280;   // longest edge for stored full photo
+const THUMB = 480;  // longest edge for grid thumbnails
 
-export function fileToDownscaledDataUrl(file) {
+const canvasToBlob = (c, type, q) => new Promise((res) => c.toBlob((b) => res(b), type, q));
+
+function scaledCanvas(source, sw, sh, max) {
+  const scale = Math.min(1, max / Math.max(sw, sh));
+  const cw = Math.max(1, Math.round(sw * scale)), ch = Math.max(1, Math.round(sh * scale));
+  const c = document.createElement('canvas');
+  c.width = cw; c.height = ch;
+  c.getContext('2d').drawImage(source, 0, 0, cw, ch);
+  return c;
+}
+
+// Image file -> { type:'image', blob(full jpeg), thumbBlob(small jpeg), w, h }
+export function fileToImageAsset(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let { width: w, height: h } = img;
-      const scale = Math.min(1, MAX / Math.max(w, h));
-      const cw = Math.round(w * scale), ch = Math.round(h * scale);
-      const c = document.createElement('canvas');
-      c.width = cw; c.height = ch;
-      c.getContext('2d').drawImage(img, 0, 0, cw, ch);
-      resolve({ dataUrl: c.toDataURL('image/jpeg', 0.82), w, h });
+    img.onload = async () => {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      try {
+        const blob = await canvasToBlob(scaledCanvas(img, w, h, MAX), 'image/jpeg', 0.82);
+        const thumbBlob = await canvasToBlob(scaledCanvas(img, w, h, THUMB), 'image/jpeg', 0.78);
+        URL.revokeObjectURL(url);
+        resolve({ type: 'image', blob, thumbBlob, w, h });
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
     };
-    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 디코딩할 수 없어요 (지원하지 않는 형식일 수 있습니다)')); };
     img.src = url;
+  });
+}
+
+// Video file -> { type:'video', blob(original), thumbBlob(poster frame jpeg), w, h, duration }
+export function fileToVideoAsset(file) {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = url;
+    let settled = false;
+    const fail = (msg) => { if (settled) return; settled = true; URL.revokeObjectURL(url); reject(new Error(msg || '동영상을 읽을 수 없어요')); };
+    v.onloadedmetadata = () => {
+      const w = v.videoWidth, h = v.videoHeight, duration = v.duration || 0;
+      // seek a little in to avoid black first frame
+      const t = duration && isFinite(duration) ? Math.min(0.2, duration / 2) : 0;
+      const grab = async () => {
+        try {
+          const c = scaledCanvas(v, w || 720, h || 720, 720);
+          const thumbBlob = await canvasToBlob(c, 'image/jpeg', 0.8);
+          if (settled) return; settled = true;
+          URL.revokeObjectURL(url);
+          resolve({ type: 'video', blob: file, thumbBlob, w, h, duration });
+        } catch (e) { fail(e.message); }
+      };
+      v.onseeked = grab;
+      try { v.currentTime = t; } catch { grab(); }
+      // fallback if seek never fires
+      setTimeout(() => { if (!settled) grab(); }, 1500);
+    };
+    v.onerror = () => fail('동영상 형식을 지원하지 않을 수 있어요');
   });
 }
 
@@ -70,7 +112,8 @@ export async function renderCard(canvas, entry, repAsset, template) {
   const W = 1080, H = 1350;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const img = repAsset ? await loadImg(repAsset.dataUrl) : null;
+  const src = repAsset ? (repAsset.type === 'video' ? repAsset.thumbUrl : repAsset.url) : null;
+  const img = src ? await loadImg(src) : null;
   const d = parseYmd(entry.date);
   const dateLong = `${d.getMonth() + 1}월 ${d.getDate()}일 · ${WEEK_KO[d.getDay()]}요일`;
   const year = d.getFullYear();
@@ -187,7 +230,7 @@ export async function renderMonthPoster(canvas, year, month, getEntry, getAsset)
   for (let day = 1; day <= days; day++) {
     const e = getEntry(ymd(new Date(year, month, day)));
     const a = e && e.repAssetId ? getAsset(e.repAssetId) : null;
-    if (a) tasks.push(loadImg(a.dataUrl).then((im) => ({ day, im, e })));
+    if (a) tasks.push(loadImg(a.thumbUrl).then((im) => ({ day, im, e })));
     else if (e) tasks.push(Promise.resolve({ day, im: null, e }));
   }
   const loaded = await Promise.all(tasks);

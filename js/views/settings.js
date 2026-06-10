@@ -1,8 +1,8 @@
 // Settings — lock, reminders, data export/import
-import { el, toast } from '../util.js?v=1';
-import * as store from '../store.js?v=1';
-import { requestPermission, permissionState } from '../reminders.js?v=1';
-import { canInstall, isStandalone, isIOS, promptInstall } from '../pwa.js?v=1';
+import { el, toast } from '../util.js?v=2';
+import * as store from '../store.js?v=2';
+import { requestPermission, permissionState } from '../reminders.js?v=2';
+import { canInstall, isStandalone, isIOS, promptInstall } from '../pwa.js?v=2';
 
 export function renderSettings(root, nav) {
   root.innerHTML = '';
@@ -51,8 +51,9 @@ export function renderSettings(root, nav) {
 
   // --- data ---
   wrap.append(group('데이터', [
-    actionRow('백업 내보내기', 'JSON 파일로 모든 기록을 저장', () => {
-      const blob = new Blob([store.exportAll()], { type: 'application/json' });
+    actionRow('백업 내보내기', 'JSON 파일로 모든 기록·미디어를 저장', async () => {
+      toast('백업 만드는 중…');
+      const blob = new Blob([await store.exportAll()], { type: 'application/json' });
       const a = document.createElement('a');
       a.download = `photo-journal-backup-${new Date().toISOString().slice(0, 10)}.json`;
       a.href = URL.createObjectURL(blob); a.click();
@@ -63,13 +64,13 @@ export function renderSettings(root, nav) {
       inp.addEventListener('change', () => {
         const f = inp.files[0]; if (!f) return;
         const r = new FileReader();
-        r.onload = () => { try { store.importAll(r.result); toast('복원했어요'); nav('#/calendar'); } catch (e) { toast('가져오기 실패: ' + e.message); } };
+        r.onload = async () => { try { toast('복원 중…'); await store.importAll(r.result); toast('복원했어요'); nav('#/calendar'); } catch (e) { toast('가져오기 실패: ' + e.message); } };
         r.readAsText(f);
       });
       inp.click();
     }),
-    actionRow('모든 데이터 삭제', '되돌릴 수 없습니다', () => {
-      if (confirm('정말 모든 기록을 삭제할까요? 되돌릴 수 없습니다.')) { store.wipe(); toast('초기화했어요'); nav('#/calendar'); }
+    actionRow('모든 데이터 삭제', '되돌릴 수 없습니다', async () => {
+      if (confirm('정말 모든 기록을 삭제할까요? 되돌릴 수 없습니다.')) { await store.wipe(); toast('초기화했어요'); nav('#/calendar'); }
     }, true),
   ]));
 

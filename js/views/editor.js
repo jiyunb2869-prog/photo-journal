@@ -1,8 +1,9 @@
 // Day entry editor — "하루 카드 편집기" (photo first, then sentences)
-import { el, fmtLong, EMOTIONS, toast } from '../util.js?v=1';
-import * as store from '../store.js?v=1';
-import { getAsset } from '../store.js?v=1';
-import { fileToDownscaledDataUrl } from '../imaging.js?v=1';
+import { el, fmtLong, EMOTIONS, toast } from '../util.js?v=2';
+import * as store from '../store.js?v=2';
+import { getAsset } from '../store.js?v=2';
+import { fileToImageAsset, fileToVideoAsset } from '../imaging.js?v=2';
+import { openVideo } from './videoplayer.js?v=2';
 
 const MAX_PHOTOS = 4;
 
@@ -28,10 +29,10 @@ export function renderEditor(root, nav, date) {
 
   // ---- photos ----
   const photoSec = el('div', { class: 'section' });
-  photoSec.append(el('div', { class: 'label', text: '사진 (대표 1 · 보조 최대 3)' }));
+  photoSec.append(el('div', { class: 'label', text: '사진·영상 (대표 1 · 보조 최대 3)' }));
   const photoGrid = el('div', { class: 'photos' });
   photoSec.append(photoGrid);
-  photoSec.append(el('div', { class: 'photo-hint', text: '첫 사진이 자동으로 대표가 됩니다. 사진을 눌러 대표를 바꿀 수 있어요.' }));
+  photoSec.append(el('div', { class: 'photo-hint', text: '사진 또는 동영상을 추가하세요. 첫 항목이 대표가 되고, 눌러서 대표를 바꿀 수 있어요. ▶를 누르면 영상이 재생됩니다.' }));
   wrap.append(photoSec);
 
   function drawPhotos() {
@@ -39,8 +40,10 @@ export function renderEditor(root, nav, date) {
     draft.assetIds.forEach((id) => {
       const a = getAsset(id);
       const isRep = id === (draft.repAssetId || draft.assetIds[0]);
-      const slot = el('div', { class: 'photo-slot', onclick: () => { draft.repAssetId = id; drawPhotos(); } }, [
-        a ? el('img', { src: a.dataUrl, alt: '' }) : null,
+      const isVideo = a && a.type === 'video';
+      const slot = el('div', { class: 'photo-slot' + (isVideo ? ' is-video' : ''), onclick: () => { draft.repAssetId = id; drawPhotos(); } }, [
+        a ? el('img', { src: a.thumbUrl, alt: '' }) : null,
+        isVideo ? el('button', { class: 'play-badge', title: '재생', onclick: (ev) => { ev.stopPropagation(); openVideo(a.url); } }, '▶') : null,
         isRep ? el('div', { class: 'rep-badge', text: '대표' }) : null,
         el('button', {
           class: 'rm', onclick: (ev) => { ev.stopPropagation(); removePhoto(id); },
@@ -56,15 +59,18 @@ export function renderEditor(root, nav, date) {
   function pickPhotos() {
     const picker = document.getElementById('filePicker');
     picker.value = '';
+    picker.setAttribute('accept', 'image/*,video/*');
     picker.onchange = async () => {
       const files = [...picker.files].slice(0, MAX_PHOTOS - draft.assetIds.length);
+      let busy;
+      if (files.length) { busy = el('div', { class: 'photo-slot busy', text: '처리 중…' }); photoGrid.insertBefore(busy, photoGrid.lastChild); }
       for (const f of files) {
         try {
-          const { dataUrl, w, h } = await fileToDownscaledDataUrl(f);
-          const id = store.addAsset(date, { dataUrl, w, h });
+          const asset = f.type.startsWith('video') ? await fileToVideoAsset(f) : await fileToImageAsset(f);
+          const id = await store.addAsset(date, asset);
           draft.assetIds.push(id);
           if (!draft.repAssetId) draft.repAssetId = id;
-        } catch (e) { toast('이미지를 불러오지 못했어요'); }
+        } catch (e) { toast(e.message || '파일을 불러오지 못했어요'); }
       }
       drawPhotos();
     };

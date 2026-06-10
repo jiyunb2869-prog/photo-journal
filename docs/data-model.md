@@ -28,13 +28,19 @@
 | createdAt / updatedAt | ISO | |
 
 ### asset  (Supabase: `entry_assets` + Storage)
+바이너리는 **IndexedDB**(`pj-assets` DB, `assets` 스토어)에 Blob으로 저장한다. localStorage(JSON, ~5MB)에 base64로 넣던 방식은 사진 여러 장에서 용량 초과로 저장이 실패했고 동영상은 불가능했다. 앱 시작 시 모든 Blob에 대해 object URL을 만들어 메모리 맵에 캐시 → `getAsset(id)`는 동기로 `{id,date,type,url,thumbUrl,w,h,duration}` 반환.
+
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | id | string | asset id |
 | date | string | 소속 엔트리 |
-| dataUrl | string | 다운스케일된 이미지(JPEG, 최대 1280px) — 네이티브에선 Storage URL |
-| w / h | number | 원본 해상도 |
+| type | 'image' \| 'video' | 미디어 종류 |
+| blob | Blob | 원본/다운스케일 미디어 (이미지 JPEG ≤1280px, 동영상 원본) |
+| thumbBlob | Blob | 그리드용 썸네일/영상 포스터 프레임 (JPEG ≤480·720px) |
+| w / h / duration | number | 해상도 / (영상)길이 |
 | createdAt | ISO | |
+
+네이티브 이식 시: 이미지/영상 원본은 Supabase Storage, 메타(type/w/h/duration)는 `entry_assets` 테이블. 썸네일은 Storage 또는 온디바이스 생성.
 
 ### generatedOutput  (Supabase: `generated_outputs`)
 하루 카드/리캡은 **요청 시 캔버스로 즉석 생성**(파생물)하므로 프로토타입에선 영속 저장하지 않는다. 마지막 선택 템플릿만 엔트리에 `cardTemplate`로 캐시.

@@ -1,8 +1,8 @@
 // Year overview — 12 mini calendars, the highest-level view
-import { el, ymd, today, parseYmd, emotionOf } from '../util.js?v=1';
-import * as store from '../store.js?v=1';
-import { getAsset } from '../store.js?v=1';
-import { renderYearPoster } from '../imaging.js?v=1';
+import { el, ymd, today, parseYmd, emotionOf } from '../util.js?v=2';
+import * as store from '../store.js?v=2';
+import { getAsset } from '../store.js?v=2';
+import { renderYearPoster } from '../imaging.js?v=2';
 
 const MONTHS_KO = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 let curYear = 0;
@@ -71,7 +71,7 @@ function miniMonth(year, month, todayStr, nav) {
     const emo = e ? emotionOf(e.emotion) : null;
     let cls = 'md';
     let style = '';
-    if (rep) { cls += ' md-photo'; style = `background-image:url(${rep.dataUrl})`; }
+    if (rep) { cls += ' md-photo'; style = `background-image:url(${rep.thumbUrl})`; }
     else if (e && !store.isEntryEmpty(e)) { cls += ' md-tint'; style = emo ? `background:color-mix(in srgb, ${emo.color} 60%, #fff)` : 'background:#ddd'; }
     if (date === todayStr) cls += ' md-today';
     g.append(el('span', { class: cls, style }));
@@ -81,7 +81,7 @@ function miniMonth(year, month, todayStr, nav) {
 }
 
 async function savePoster(year) {
-  const { toast } = await import('../util.js?v=1');
+  const { toast } = await import('../util.js?v=2');
   toast('연간 포스터 생성 중…');
   const canvas = document.createElement('canvas');
   await renderYearPoster(canvas, year, store.getEntry, getAsset);

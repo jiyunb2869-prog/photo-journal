@@ -1,8 +1,8 @@
 // Web reminders. Note: browsers can only notify while a tab is open (no true
 // background scheduling without a service worker + Push). Native (iOS/Android)
 // will handle real local notifications. Here we check on load + every minute.
-import * as store from './store.js?v=1';
-import { today, ymd } from './util.js?v=1';
+import * as store from './store.js?v=2';
+import { today, ymd } from './util.js?v=2';
 
 export function permissionState() {
   return ('Notification' in window) ? Notification.permission : 'denied';

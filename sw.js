@@ -1,16 +1,16 @@
 // Photo Journal service worker — offline app shell.
 // Strategy: same-origin = network-first (always fresh online, cache offline);
 // cross-origin (fonts) = cache-first. Bump CACHE when the shell changes.
-const CACHE = 'pj-cache-v1';
-const V = '1'; // module version query — keep in sync with index.html / imports
+const CACHE = 'pj-cache-v2';
+const V = '2'; // module version query — keep in sync with index.html / imports
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-512-maskable.png', './icons/apple-touch-icon.png',
   `./js/app.js?v=${V}`, `./js/util.js?v=${V}`, `./js/store.js?v=${V}`, `./js/imaging.js?v=${V}`,
-  `./js/reminders.js?v=${V}`,
+  `./js/assets.js?v=${V}`, `./js/reminders.js?v=${V}`, `./js/pwa.js?v=${V}`,
   `./js/views/calendar.js?v=${V}`, `./js/views/editor.js?v=${V}`, `./js/views/daycard.js?v=${V}`,
   `./js/views/recap.js?v=${V}`, `./js/views/year.js?v=${V}`, `./js/views/search.js?v=${V}`,
-  `./js/views/settings.js?v=${V}`,
+  `./js/views/settings.js?v=${V}`, `./js/views/videoplayer.js?v=${V}`,
 ];
 
 self.addEventListener('install', (e) => {

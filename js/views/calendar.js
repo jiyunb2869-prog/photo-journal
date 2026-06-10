@@ -1,8 +1,8 @@
 // Month calendar home — the app's face
-import { el, ymd, today, parseYmd, MONTH_KO, emotionOf, toast } from '../util.js?v=1';
-import * as store from '../store.js?v=1';
-import { getAsset } from '../store.js?v=1';
-import { renderMonthPoster } from '../imaging.js?v=1';
+import { el, ymd, today, parseYmd, MONTH_KO, emotionOf, toast } from '../util.js?v=2';
+import * as store from '../store.js?v=2';
+import { getAsset } from '../store.js?v=2';
+import { renderMonthPoster } from '../imaging.js?v=2';
 
 let view = { y: 0, m: 0 }; // current shown month
 
@@ -57,7 +57,7 @@ function draw(root, nav) {
     const e = otd[0]; const a = getAsset(e.repAssetId);
     const yrs = parseYmd(today()).getFullYear() - parseYmd(e.date).getFullYear();
     wrap.append(el('div', { class: 'onthisday', onclick: () => nav(`#/card/${e.date}`) }, [
-      a ? el('img', { src: a.dataUrl, alt: '' }) : null,
+      a ? el('img', { src: a.thumbUrl, alt: '' }) : null,
       el('div', {}, [
         el('div', { class: 'ot-t', text: `On This Day · ${yrs}년 전 오늘` }),
         el('div', { class: 'ot-l', text: e.oneLine || '그날의 기록' }),
@@ -95,7 +95,8 @@ function draw(root, nav) {
     if (rep) {
       cls.push('has-photo');
       inner.push(el('div', { class: 'grad' }));
-      inner.push(el('img', { src: rep.dataUrl, alt: '', loading: 'lazy' }));
+      inner.push(el('img', { src: rep.thumbUrl, alt: '', loading: 'lazy' }));
+      if (rep.type === 'video') inner.push(el('div', { class: 'vid-badge', text: '▶' }));
       if (emo) inner.push(el('div', { class: 'emo', text: emo.emoji }));
     } else if (entry && !store.isEntryEmpty(entry)) {
       cls.push('tint');

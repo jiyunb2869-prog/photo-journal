@@ -1,7 +1,7 @@
 // Search entries by text, tag, emotion
-import { el, fmtLong, emotionOf } from '../util.js?v=1';
-import * as store from '../store.js?v=1';
-import { getAsset } from '../store.js?v=1';
+import { el, fmtLong, emotionOf } from '../util.js?v=2';
+import * as store from '../store.js?v=2';
+import { getAsset } from '../store.js?v=2';
 
 export function renderSearch(root, nav) {
   root.innerHTML = '';
@@ -48,7 +48,7 @@ export function renderSearch(root, nav) {
       const rep = e.repAssetId ? getAsset(e.repAssetId) : null;
       const emo = emotionOf(e.emotion);
       const item = el('div', { class: 'result', onclick: () => nav(`#/card/${e.date}`) }, [
-        rep ? el('img', { src: rep.dataUrl, alt: '' })
+        rep ? el('img', { src: rep.thumbUrl, alt: '' })
           : el('div', { class: 'result-noimg', style: emo ? `background:color-mix(in srgb, ${emo.color} 35%, #fff)` : '', text: emo ? emo.emoji : '·' }),
         el('div', { class: 'result-body' }, [
           el('div', { class: 'result-date', text: fmtLong(e.date) }),

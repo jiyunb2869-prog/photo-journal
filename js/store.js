@@ -1,5 +1,7 @@
-// Data layer — single localStorage key, mirrors docs/data-model.md
-import { uid, today, parseYmd, ymd } from './util.js?v=1';
+// Data layer — entries/settings in localStorage (small JSON), binary media
+// (photos/videos) in IndexedDB via assets.js (object URLs cached in memory).
+import { uid, today, parseYmd, ymd } from './util.js?v=2';
+import { initAssets, getAssetMem, putAsset, delAsset, exportAssets, importAssets, clearAssets, dataUrlToBlob } from './assets.js?v=2';
 
 const KEY = 'pj.v1';
 
@@ -112,7 +114,7 @@ export function upsertEntry(date, patch) {
 
 export function deleteEntry(date) {
   const e = db.entries[date];
-  if (e) e.assetIds.forEach((id) => delete db.assets[id]);
+  if (e) e.assetIds.forEach((id) => delAsset(id)); // async fire-and-forget
   delete db.entries[date];
   persist();
 }
@@ -121,15 +123,33 @@ export function deleteEntry(date) {
 export const isEntryEmpty = (e) =>
   !e || (!e.assetIds.length && !e.oneLine.trim() && !e.reflection.trim() && !e.emotion && !e.tags.length && !e.memo.trim());
 
-// ---- assets ----
-export const getAsset = (id) => (id ? db.assets[id] || null : null);
-export function addAsset(date, { dataUrl, w, h }) {
-  const id = uid();
-  db.assets[id] = { id, date, dataUrl, w, h, createdAt: new Date().toISOString() };
-  persist();
-  return id;
+// ---- assets (binary in IndexedDB) ----
+// getAsset returns { id, date, type:'image'|'video', url, thumbUrl, w, h, duration }
+export const getAsset = (id) => getAssetMem(id);
+// rec: { type, blob, thumbBlob, w, h, duration }
+export async function addAsset(date, rec) {
+  return putAsset({ date, type: rec.type || 'image', blob: rec.blob, thumbBlob: rec.thumbBlob, w: rec.w, h: rec.h, duration: rec.duration });
 }
-export function removeAsset(id) { delete db.assets[id]; persist(); }
+export function removeAsset(id) { delAsset(id); } // async fire-and-forget
+
+// One-time startup: open IDB + migrate any legacy localStorage dataUrl assets.
+export async function init() {
+  await initAssets();
+  await migrateLegacyAssets();
+}
+async function migrateLegacyAssets() {
+  const legacy = Object.values(db.assets || {});
+  if (!legacy.length) return;
+  for (const a of legacy) {
+    if (!a.dataUrl) continue;
+    try {
+      const blob = await dataUrlToBlob(a.dataUrl);
+      await putAsset({ id: a.id, date: a.date, type: 'image', blob, thumbBlob: blob, w: a.w, h: a.h, createdAt: a.createdAt });
+    } catch (e) { console.warn('legacy asset migrate failed', a.id, e); }
+  }
+  db.assets = {};
+  persist();
+}
 
 // ---- settings ----
 export const getSettings = () => db.settings;
@@ -164,7 +184,7 @@ export function onThisDay() {
 }
 
 // ---- demo seed (only if empty) ----
-export function seedIfEmpty(makeGradientDataUrl) {
+export async function seedIfEmpty(makeGradientDataUrl) {
   if (allEntries().length) return false;
   const t = new Date();
   const y = t.getFullYear(), m = t.getMonth();
@@ -180,8 +200,8 @@ export function seedIfEmpty(makeGradientDataUrl) {
   for (const s of samples) {
     const day = Math.min(s.day, new Date(y, m + 1, 0).getDate());
     const date = ymd(new Date(y, m, day));
-    const url = makeGradientDataUrl(s.hue);
-    const aid = addAsset(date, { dataUrl: url, w: 800, h: 800 });
+    const blob = await dataUrlToBlob(makeGradientDataUrl(s.hue));
+    const aid = await addAsset(date, { type: 'image', blob, thumbBlob: blob, w: 800, h: 800 });
     upsertEntry(date, {
       oneLine: s.one, emotion: s.emo, tags: s.tags,
       reflection: '', assetIds: [aid], repAssetId: aid,
@@ -189,21 +209,29 @@ export function seedIfEmpty(makeGradientDataUrl) {
   }
   // a year-ago entry for On This Day
   const lastYear = ymd(new Date(y - 1, m, Math.min(t.getDate(), 28)));
-  const url = makeGradientDataUrl(200);
-  const aid = addAsset(lastYear, { dataUrl: url, w: 800, h: 800 });
+  const blob = await dataUrlToBlob(makeGradientDataUrl(200));
+  const aid = await addAsset(lastYear, { type: 'image', blob, thumbBlob: blob, w: 800, h: 800 });
   upsertEntry(lastYear, { oneLine: '작년 오늘의 기록', emotion: 'calm', tags: ['추억'], assetIds: [aid], repAssetId: aid });
   return true;
 }
 
-export function exportAll() { return JSON.stringify(db, null, 2); }
-export function importAll(json) {
+export async function exportAll() {
+  const payload = { ...db, assets: {}, mediaAssets: await exportAssets() };
+  return JSON.stringify(payload, null, 2);
+}
+export async function importAll(json) {
   const parsed = typeof json === 'string' ? JSON.parse(json) : json;
   if (!parsed || typeof parsed !== 'object' || !parsed.entries) throw new Error('형식이 올바르지 않은 백업 파일');
   const base = empty();
   db = {
-    ...base, ...parsed,
+    ...base, ...parsed, assets: {},
     settings: { ...base.settings, ...(parsed.settings || {}) },
   };
+  delete db.mediaAssets;
   persist();
+  // media: new format (mediaAssets) or legacy (assets with dataUrl)
+  const media = parsed.mediaAssets
+    || Object.values(parsed.assets || {}).filter((a) => a.dataUrl).map((a) => ({ id: a.id, date: a.date, type: 'image', dataUrl: a.dataUrl, w: a.w, h: a.h }));
+  await importAssets(media);
 }
-export function wipe() { db = empty(); persist(); }
+export async function wipe() { db = empty(); persist(); await clearAssets(); }
