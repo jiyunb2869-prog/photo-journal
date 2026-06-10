@@ -1,11 +1,11 @@
 // Photo Journal service worker — offline app shell.
 // Strategy: same-origin = network-first (always fresh online, cache offline);
 // cross-origin (fonts) = cache-first. Bump CACHE when the shell changes.
-const CACHE = 'pj-cache-v3';
+const CACHE = 'pj-cache-v4';
 const V = '3'; // module version query — keep in sync with index.html / imports
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/icon-512-maskable.png', './icons/apple-touch-icon.png',
+  './icons/icon-192.png?v=4', './icons/icon-512.png?v=4', './icons/icon-512-maskable.png?v=4', './icons/apple-touch-icon.png?v=4',
   `./js/app.js?v=${V}`, `./js/util.js?v=${V}`, `./js/store.js?v=${V}`, `./js/imaging.js?v=${V}`,
   `./js/assets.js?v=${V}`, `./js/reminders.js?v=${V}`, `./js/pwa.js?v=${V}`,
   `./js/config.js?v=${V}`, `./js/supabase.js?v=${V}`, `./js/cloud.js?v=${V}`,

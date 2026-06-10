@@ -63,7 +63,7 @@ export function renderAuth(root) {
   pass.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') submit(); });
 
   root.append(el('div', { class: 'auth fade-in' }, [
-    el('div', { class: 'auth-logo' }, [el('img', { src: './icons/icon-192.png', alt: '' })]),
+    el('div', { class: 'auth-logo' }, [el('img', { src: './icons/icon-192.png?v=4', alt: '' })]),
     el('div', { class: 'auth-title', text: '포토 저널' }),
     el('div', { class: 'auth-sub', text: '사진으로 하루를 저장하고, 달력으로 다시 보는 기록' }),
     el('div', { class: 'auth-form' }, [email, pass, msg, submitBtn]),

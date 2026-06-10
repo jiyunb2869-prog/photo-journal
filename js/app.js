@@ -134,7 +134,7 @@ function setupInstallBanner() {
     if (!showable) { if (bar) close(false); return; }
     if (bar) return; // already shown
     bar = el('div', { class: 'install-bar' }, [
-      el('div', { class: 'ib-icon' }, [el('img', { src: './icons/icon-192.png', alt: '' })]),
+      el('div', { class: 'ib-icon' }, [el('img', { src: './icons/icon-192.png?v=4', alt: '' })]),
       el('div', { class: 'ib-body' }, [
         el('div', { class: 'ib-t', text: '홈 화면에 설치' }),
         el('div', { class: 'ib-d', text: isIOS() && !canInstall() ? '공유 버튼 → "홈 화면에 추가"' : '앱처럼 전체화면으로 쓰세요' }),
