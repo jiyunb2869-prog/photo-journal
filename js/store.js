@@ -1,9 +1,20 @@
 // Data layer — entries/settings in localStorage (small JSON), binary media
 // (photos/videos) in IndexedDB via assets.js (object URLs cached in memory).
 import { uid, today, parseYmd, ymd } from './util.js?v=2';
-import { initAssets, getAssetMem, putAsset, delAsset, exportAssets, importAssets, clearAssets, dataUrlToBlob } from './assets.js?v=2';
+import { initAssets, getAssetMem, putAsset, delAsset, getBlob, exportAssets, importAssets, clearAssets, dataUrlToBlob } from './assets.js?v=2';
+import { CLOUD_ENABLED } from './config.js?v=2';
+import * as cloud from './cloud.js?v=2';
 
 const KEY = 'pj.v1';
+
+// ---- cloud session state ----
+let session = null;        // Supabase session (null = logged out / local mode)
+let applyingRemote = false; // true while pulling from cloud (suppress push-back)
+export function setSession(s) { session = s; }
+export const userId = () => session?.user?.id || null;
+export const userEmail = () => session?.user?.email || null;
+const cloudOn = () => CLOUD_ENABLED && !!session && !applyingRemote;
+const reportCloud = (e) => { console.error('cloud sync error', e); };
 
 const empty = () => ({
   journals: [{ id: 'default', title: '나의 저널', createdAt: new Date().toISOString() }],
@@ -109,12 +120,16 @@ export function upsertEntry(date, patch) {
   if (!entry.repAssetId && entry.assetIds.length) entry.repAssetId = entry.assetIds[0];
   db.entries[date] = entry;
   persist();
+  if (cloudOn()) cloud.pushEntry(userId(), entry).catch(reportCloud);
   return entry;
 }
 
 export function deleteEntry(date) {
   const e = db.entries[date];
-  if (e) e.assetIds.forEach((id) => delAsset(id)); // async fire-and-forget
+  if (e) {
+    e.assetIds.forEach((id) => removeAsset(id)); // mirrors to cloud too
+    if (cloudOn()) cloud.removeEntry(date).catch(reportCloud);
+  }
   delete db.entries[date];
   persist();
 }
@@ -128,9 +143,22 @@ export const isEntryEmpty = (e) =>
 export const getAsset = (id) => getAssetMem(id);
 // rec: { type, blob, thumbBlob, w, h, duration }
 export async function addAsset(date, rec) {
-  return putAsset({ date, type: rec.type || 'image', blob: rec.blob, thumbBlob: rec.thumbBlob, w: rec.w, h: rec.h, duration: rec.duration });
+  const id = (crypto.randomUUID ? crypto.randomUUID() : uid());
+  let storagePath, thumbPath;
+  if (cloudOn()) {
+    try {
+      const r = await cloud.uploadAsset(userId(), { id, date, type: rec.type || 'image', blob: rec.blob, thumbBlob: rec.thumbBlob || rec.blob, w: rec.w, h: rec.h, duration: rec.duration });
+      storagePath = r.path; thumbPath = r.thumbPath;
+    } catch (e) { reportCloud(e); }
+  }
+  await putAsset({ id, date, type: rec.type || 'image', blob: rec.blob, thumbBlob: rec.thumbBlob, w: rec.w, h: rec.h, duration: rec.duration, storagePath, thumbPath });
+  return id;
 }
-export function removeAsset(id) { delAsset(id); } // async fire-and-forget
+export function removeAsset(id) {
+  const a = getAssetMem(id);
+  if (cloudOn()) cloud.deleteAssetCloud({ id, storage_path: a?.storagePath, thumb_path: a?.thumbPath }).catch(reportCloud);
+  delAsset(id);
+}
 
 // One-time startup: open IDB + migrate any legacy localStorage dataUrl assets.
 export async function init() {
@@ -148,6 +176,70 @@ async function migrateLegacyAssets() {
     } catch (e) { console.warn('legacy asset migrate failed', a.id, e); }
   }
   db.assets = {};
+  persist();
+}
+
+// ---- cloud sync ----
+// Wipe local cache only (used on logout / before replacing with cloud data).
+export async function localWipe() {
+  db = empty(); persist();
+  await clearAssets();
+}
+
+// Called right after login. Decides between uploading existing local data
+// (first login on a device that already had entries) or pulling cloud data.
+export async function syncOnLogin() {
+  const uid = userId();
+  if (!uid) return;
+  applyingRemote = true;
+  try {
+    const cloudEntries = await cloud.pullEntries();
+    const localCount = allEntries().length;
+    if (cloudEntries.length === 0 && localCount > 0) {
+      await uploadLocalToCloud(uid);          // migrate this device's records up
+    } else {
+      await replaceLocalWithCloud(uid, cloudEntries); // adopt cloud as source of truth
+    }
+  } finally {
+    applyingRemote = false;
+  }
+}
+
+async function uploadLocalToCloud(uid) {
+  for (const e of allEntries()) {
+    const idMap = {};
+    for (const oldId of [...e.assetIds]) {
+      const rec = await getBlob(oldId);
+      if (!rec) continue;
+      const newId = (crypto.randomUUID ? crypto.randomUUID() : uid + oldId);
+      idMap[oldId] = newId;
+      try {
+        const { path, thumbPath } = await cloud.uploadAsset(uid, { id: newId, date: e.date, type: rec.type, blob: rec.blob, thumbBlob: rec.thumbBlob || rec.blob, w: rec.w, h: rec.h, duration: rec.duration });
+        await putAsset({ id: newId, date: e.date, type: rec.type, blob: rec.blob, thumbBlob: rec.thumbBlob || rec.blob, w: rec.w, h: rec.h, duration: rec.duration, storagePath: path, thumbPath });
+        await delAsset(oldId);
+      } catch (err) { reportCloud(err); }
+    }
+    e.assetIds = e.assetIds.map((id) => idMap[id] || id);
+    if (e.repAssetId) e.repAssetId = idMap[e.repAssetId] || e.repAssetId;
+    db.entries[e.date] = e;
+    try { await cloud.pushEntry(uid, e); } catch (err) { reportCloud(err); }
+  }
+  persist();
+}
+
+async function replaceLocalWithCloud(uid, cloudEntries) {
+  await localWipe();
+  const rows = await cloud.pullAssets();
+  for (const row of rows) {
+    try {
+      const blob = await cloud.downloadBlob(row.storage_path);
+      const thumbBlob = row.thumb_path ? await cloud.downloadBlob(row.thumb_path) : blob;
+      await putAsset({ id: row.id, date: row.date, type: row.type, blob, thumbBlob, w: row.w, h: row.h, duration: row.duration, storagePath: row.storage_path, thumbPath: row.thumb_path });
+    } catch (err) { reportCloud(err); }
+  }
+  for (const e of cloudEntries) {
+    db.entries[e.date] = { journalId: 'default', cardTemplate: 'poster', tags: [], assetIds: [], ...e };
+  }
   persist();
 }
 

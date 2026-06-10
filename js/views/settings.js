@@ -1,8 +1,10 @@
-// Settings — lock, reminders, data export/import
+// Settings — account, lock, reminders, data export/import
 import { el, toast } from '../util.js?v=2';
 import * as store from '../store.js?v=2';
 import { requestPermission, permissionState } from '../reminders.js?v=2';
 import { canInstall, isStandalone, isIOS, promptInstall } from '../pwa.js?v=2';
+import { CLOUD_ENABLED } from '../config.js?v=2';
+import { signOut } from '../cloud.js?v=2';
 
 export function renderSettings(root, nav) {
   root.innerHTML = '';
@@ -14,6 +16,19 @@ export function renderSettings(root, nav) {
     el('div', { class: 'ed-date', text: '설정', style: 'font-size:16px' }),
     el('span', { style: 'width:48px' }),
   ]));
+
+  // --- account (cloud mode) ---
+  if (CLOUD_ENABLED) {
+    wrap.append(group('계정', [
+      el('div', { class: 'set-row' }, [
+        el('div', {}, [el('div', { class: 'set-t', text: store.userEmail() || '로그인됨' }), el('div', { class: 'set-d', text: '이 계정으로 기록이 클라우드에 동기화돼요' })]),
+        el('span', { class: 'set-arrow', text: '☁' }),
+      ]),
+      actionRow('로그아웃', '이 기기에서 로그아웃합니다', async () => {
+        if (confirm('로그아웃할까요? (기록은 클라우드에 안전하게 보관됩니다)')) { await signOut(); }
+      }),
+    ]));
+  }
 
   // --- app / install ---
   wrap.append(group('앱', [installRow(nav)]));

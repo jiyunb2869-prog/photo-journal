@@ -8,9 +8,10 @@ const CORE = [
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-512-maskable.png', './icons/apple-touch-icon.png',
   `./js/app.js?v=${V}`, `./js/util.js?v=${V}`, `./js/store.js?v=${V}`, `./js/imaging.js?v=${V}`,
   `./js/assets.js?v=${V}`, `./js/reminders.js?v=${V}`, `./js/pwa.js?v=${V}`,
+  `./js/config.js?v=${V}`, `./js/supabase.js?v=${V}`, `./js/cloud.js?v=${V}`,
   `./js/views/calendar.js?v=${V}`, `./js/views/editor.js?v=${V}`, `./js/views/daycard.js?v=${V}`,
   `./js/views/recap.js?v=${V}`, `./js/views/year.js?v=${V}`, `./js/views/search.js?v=${V}`,
-  `./js/views/settings.js?v=${V}`, `./js/views/videoplayer.js?v=${V}`,
+  `./js/views/settings.js?v=${V}`, `./js/views/videoplayer.js?v=${V}`, `./js/views/auth.js?v=${V}`,
 ];
 
 self.addEventListener('install', (e) => {

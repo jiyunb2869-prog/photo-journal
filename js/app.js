@@ -11,6 +11,9 @@ import { renderSearch } from './views/search.js?v=2';
 import { renderSettings } from './views/settings.js?v=2';
 import { startReminderLoop } from './reminders.js?v=2';
 import { registerSW, canInstall, isStandalone, isIOS, onInstallStateChange, promptInstall } from './pwa.js?v=2';
+import { CLOUD_ENABLED } from './config.js?v=2';
+import * as cloud from './cloud.js?v=2';
+import { renderAuth } from './views/auth.js?v=2';
 
 const app = $('#app');
 
@@ -22,6 +25,11 @@ const nav = (hash) => {
 function route() {
   const hash = location.hash || '#/calendar';
   const [, name, arg] = hash.split('/');
+
+  // login gate (cloud mode): no session → show auth
+  if (CLOUD_ENABLED && !store.userId()) {
+    return renderAuth(app);
+  }
 
   // simple app-lock gate
   if (store.getSettings().locked && name !== 'unlock') {
@@ -66,15 +74,44 @@ function renderLockToggle(root, nav) {
 
 window.addEventListener('hashchange', route);
 
-async function boot() {
-  app.innerHTML = '<div class="empty-state">불러오는 중…</div>';
-  try {
-    await store.init();                          // open IndexedDB + migrate legacy media
-    await store.seedIfEmpty(makeGradientDataUrl); // demo content on first run
-  } catch (e) { console.error('boot init failed', e); }
-  route();
+let started = false;
+function startLoopsOnce() {
+  if (startLoopsOnce.done) return; startLoopsOnce.done = true;
   startReminderLoop();
+}
+
+// Logged-in (or local-mode) app start: sync, then render.
+async function startApp() {
+  if (started) return; started = true;
+  if (CLOUD_ENABLED) {
+    app.innerHTML = '<div class="empty-state">동기화 중…</div>';
+    try { await store.syncOnLogin(); } catch (e) { console.error('cloud sync failed', e); }
+  }
+  if (!location.hash || location.hash === '#/auth') location.hash = '#/calendar';
+  route();
+  startLoopsOnce();
+}
+
+async function boot() {
   registerSW();
+  app.innerHTML = '<div class="empty-state">불러오는 중…</div>';
+  try { await store.init(); } catch (e) { console.error('boot init failed', e); }
+
+  if (CLOUD_ENABLED) {
+    cloud.onAuth(async (event, sessionObj) => {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && sessionObj) {
+        store.setSession(sessionObj); await startApp();
+      } else if (event === 'SIGNED_OUT') {
+        store.setSession(null); started = false; await store.localWipe(); renderAuth(app);
+      }
+    });
+    const sess = await cloud.getSession();
+    if (sess) { store.setSession(sess); await startApp(); }
+    else { renderAuth(app); }
+  } else {
+    try { await store.seedIfEmpty(makeGradientDataUrl); } catch (e) { console.error(e); }
+    route(); startLoopsOnce();
+  }
   setupInstallBanner();
 }
 boot();

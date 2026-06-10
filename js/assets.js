@@ -26,7 +26,7 @@ const reqP = (req) => new Promise((res, rej) => { req.onsuccess = () => res(req.
 function addToMem(rec) {
   const url = URL.createObjectURL(rec.blob);
   const thumbUrl = rec.thumbBlob ? URL.createObjectURL(rec.thumbBlob) : url;
-  mem.set(rec.id, { id: rec.id, date: rec.date, type: rec.type || 'image', url, thumbUrl, w: rec.w, h: rec.h, duration: rec.duration });
+  mem.set(rec.id, { id: rec.id, date: rec.date, type: rec.type || 'image', url, thumbUrl, w: rec.w, h: rec.h, duration: rec.duration, storagePath: rec.storagePath, thumbPath: rec.thumbPath });
 }
 
 export async function initAssets() {
@@ -44,8 +44,8 @@ export const allAssetIds = () => [...mem.keys()];
 
 // rec: { date, type, blob, thumbBlob, w, h, duration }
 export async function putAsset(rec) {
-  const id = rec.id || uid();
-  const full = { id, date: rec.date, type: rec.type || 'image', blob: rec.blob, thumbBlob: rec.thumbBlob || rec.blob, w: rec.w, h: rec.h, duration: rec.duration, createdAt: rec.createdAt || new Date().toISOString() };
+  const id = rec.id || (crypto.randomUUID ? crypto.randomUUID() : uid());
+  const full = { id, date: rec.date, type: rec.type || 'image', blob: rec.blob, thumbBlob: rec.thumbBlob || rec.blob, w: rec.w, h: rec.h, duration: rec.duration, storagePath: rec.storagePath, thumbPath: rec.thumbPath, createdAt: rec.createdAt || new Date().toISOString() };
   if (_db) { try { await reqP(store('readwrite').put(full)); } catch (e) { console.error('asset persist failed', e); throw e; } }
   addToMem(full);
   return id;
